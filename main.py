@@ -116,7 +116,7 @@ async def fetch_online_admins(session):
                 if reforger_id in identifiers and identifiers[reforger_id] == "reforgerUUID":
                     online_admins[discord_id] = server_id
 
-    print(f"[DEBUG] Online Admins: {online_admins}")  # Debugging output
+    print(f"[DEBUG] Online Admins: {online_admins}")
     return online_admins
 
 async def cleanup_removed_admins():
@@ -131,24 +131,21 @@ async def cleanup_removed_admins():
         cursor.execute("SELECT discord_id FROM admins")
         admins = cursor.fetchall()
 
-        guild = bot.guilds[0]  # Assuming the bot is in only one server
+        guild = bot.guilds[0]  # assuming the bot is in only one server which it should be
 
         for (discord_id,) in admins:
             member = guild.get_member(int(discord_id))
             if member:
                 has_role = any(role.id == REQUIRED_ROLE_ID for role in member.roles)
                 if not has_role:
-                    # ? Log the removal
                     print(f"[INFO] User {discord_id} had role removed, deleting from DB.")
-                    
-                    # ? Delete the full entry from the database
                     cursor.execute("DELETE FROM admins WHERE discord_id = %s", (discord_id,))
                     conn.commit()
 
         cursor.close()
         conn.close()
         
-        await asyncio.sleep(1800)  # Check every 30 minutes
+        await asyncio.sleep(1800)  # check every 30 minutes
 async def update_status():
     """Updates the bot's status with the number of online admins."""
     await bot.wait_until_ready()
@@ -165,7 +162,7 @@ async def update_status():
 
             await bot.change_presence(activity=discord.Game(name=status_message))
             
-            await asyncio.sleep(UPDATE_INTERVAL)  # Update at the same interval as embed
+            await asyncio.sleep(UPDATE_INTERVAL)
 async def update_embed():
     """Updates the Discord embed with all servers, player counts, and mentions online admins."""
     await bot.wait_until_ready()
