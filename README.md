@@ -17,18 +17,6 @@ A **Discord bot** that tracks **online admins** across multiple Reforger servers
 
 ## ⚙️ Setup & Installation
 
-### 1️⃣ Clone the Repository
-```sh
-git clone https://github.com/YOUR_GITHUB_USERNAME/Reforger-Admin-Tracker.git
-cd Reforger-Admin-Tracker
-```
-
-### 2️⃣ Install Dependencies
-Ensure you have **Python 3.8+** installed, then run:
-```sh
-pip install -r requirements.txt
-```
-
 ### 3️⃣ Configure the `.env` File  
 Create a **`.env`** file in the project directory and configure the following variables:
 
