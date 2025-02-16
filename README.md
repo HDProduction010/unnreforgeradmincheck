@@ -4,19 +4,6 @@ A **Discord bot** that tracks **online admins** across multiple Reforger servers
 
 ---
 
-## 🔧 Features
-✅ **Tracks Admins in Reforger Servers** - Uses BattleMetrics API to detect admins and update a Discord embed.  
-✅ **Automatic Role-Based Removal** - Removes admins from the database if their required role is lost.  
-✅ **Slash Command to Register IDs** - Admins can register their **Reforger ID** via `/addmyid`.  
-✅ **Database Storage** - Admins' Discord IDs & Reforger IDs are stored in **MySQL/MariaDB**.  
-✅ **Real-Time Discord Embed Updates** - Shows online admins, server names, and player counts.  
-✅ **Bot Status Updates** - Displays the number of online admins as the bot's **Discord status**.  
-✅ **Admin Database Query** - Allows authorized users to **query the database** with `/printdb`.  
-
----
-
-## ⚙️ Setup & Installation
-
 ### 3️⃣ Configure the `.env` File  
 Create a **`.env`** file in the project directory and configure the following variables:
 
@@ -39,10 +26,6 @@ SERVER_1=789234 # BM Server IDs
 
 ```
 
-### 4️⃣ Start the Bot
-```sh
-python3 main.py
-```
 
 ---
 
@@ -76,23 +59,6 @@ python3 main.py
 
 5️⃣ **Authorized Users Can Query the Database**  
    - Using `/printdb`, **authorized users** can view all **stored admins** in an embed.
-
----
-
-## ⚠️ Troubleshooting
-
-- **Bot not responding to commands?**  
-  - Make sure the bot **has permission to read and send messages** in the target channel.  
-  - Ensure the bot **has "Use Slash Commands" permission** in your server settings.
-
-- **Admins not showing up as online?**  
-  - Verify that the **Reforger IDs are correctly registered**.  
-  - Ensure **BattleMetrics API key** is **valid and has access** to fetch player data.
-
-- **Database not updating?**  
-  - Check if the **MySQL database is running** and credentials in `.env` are correct.  
-
----
 
 ## 📜 License
 
