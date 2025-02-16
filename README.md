@@ -100,11 +100,3 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 👨‍💻 Contributors
-
-- **[Your Name]** - Developer & Maintainer  
-- **[Your Team/Guild Name]** - Support & Testing  
-
----
-
-Now, you're ready to use the **Reforger Admin Tracker Bot**! 🚀
