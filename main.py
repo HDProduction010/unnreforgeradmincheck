@@ -408,8 +408,8 @@ async def schedule_sftp_updates():
         await asyncio.sleep(18000)  # Runs every 5 hours
 
 async def update_sftp_files(json_data):
-    """Writes the exported database JSON to remote SFTP servers and appends Server 9 manual entries."""
-    
+    """Writes the exported database JSON to remote SFTP servers while preserving the full config file."""
+
     # Load the manual Server 9 IDs from .env
     try:
         manual_server9_ids = json.loads(os.getenv("SERVER_9_MANUAL_REFORGER_IDS", "{}"))
@@ -422,12 +422,10 @@ async def update_sftp_files(json_data):
     try:
         admin_dict = json.loads(json_data)  # Convert the JSON string into a dictionary
         admin_dict["admins"].update(manual_server9_ids)  # Merge manual IDs into "admins"
-        merged_json_data = json.dumps(admin_dict, indent=4)
     except json.JSONDecodeError as e:
         print(f"[ERROR] Failed to process admin JSON data: {e}")
         return
 
-    # Upload to all SFTP servers
     for server in SFTP_SERVERS:
         try:
             ssh = paramiko.SSHClient()
@@ -442,8 +440,21 @@ async def update_sftp_files(json_data):
             sftp = ssh.open_sftp()
             remote_file_path = server["filepath"]
 
+            
+            try:
+                with sftp.file(remote_file_path, "r") as f:
+                    existing_data = f.read().decode("utf-8")
+                    config_data = json.loads(existing_data)
+            except (IOError, json.JSONDecodeError) as e:
+                print(f"[ERROR] Failed to read existing config on {server['host']}: {e}")
+                config_data = {}  # Create a new empty config if read fails
+
+            
+            config_data["admins"] = admin_dict["admins"]
+
+            P
             with sftp.file(remote_file_path, "w") as f:
-                f.write(merged_json_data)
+                f.write(json.dumps(config_data, indent=4))
 
             sftp.close()
             ssh.close()
@@ -451,7 +462,6 @@ async def update_sftp_files(json_data):
 
         except Exception as e:
             print(f"[ERROR] Failed to update {server['host']}: {e}")
-
 
 
 bot.run(DISCORD_TOKEN)
