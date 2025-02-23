@@ -151,7 +151,7 @@ async def fetch_online_admins(session):
                 if reforger_id in identifiers and identifiers[reforger_id] == "reforgerUUID":
                     online_admins[discord_id] = server_id
 
-    # ✅ Add Manual Server 9 Overrides (without tracking them live)
+    # âœ… Add Manual Server 9 Overrides (without tracking them live)
     for reforger_id, username in manual_server9_entries.items():
         online_admins[reforger_id] = "Server 9 Override"
 
@@ -187,6 +187,47 @@ async def cleanup_removed_admins():
         conn.close()
         
         await asyncio.sleep(1800)  # check every 30 minutes
+        
+async def update_missing_usernames():
+    """Checks for missing Discord usernames in the database, updates them, and triggers an SFTP update if necessary."""
+    await bot.wait_until_ready()
+
+    while not bot.is_closed():
+        print("[DEBUG] Checking for missing Discord usernames in the database...")
+
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        # Find entries where the username is NULL or empty
+        cursor.execute("SELECT discord_id FROM admins WHERE username IS NULL OR username = ''")
+        missing_users = cursor.fetchall()
+
+        if missing_users:
+            print(f"[INFO] Found {len(missing_users)} users missing a Discord username. Attempting to update...")
+
+        guild = bot.guilds[0]  # Assuming the bot is in one main server
+        updated = False  # Flag to check if any usernames were updated
+
+        for (discord_id,) in missing_users:
+            member = guild.get_member(int(discord_id))
+            if member:
+                username = member.name
+                cursor.execute("UPDATE admins SET username = %s WHERE discord_id = %s", (username, discord_id))
+                print(f"[INFO] Updated username for {discord_id} -> {username}")
+                updated = True  # Mark that at least one username was updated
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        # If any usernames were updated, trigger an immediate SFTP update
+        if updated:
+            print("[INFO] Usernames updated. Triggering immediate SFTP update...")
+            await schedule_sftp_updates()
+
+        await asyncio.sleep(300)  # Check every 5 minutes (300 seconds)
+
+
 async def update_status():
     """Updates the bot's status with the number of online admins."""
     await bot.wait_until_ready()
@@ -268,7 +309,8 @@ async def on_ready():
     bot.loop.create_task(update_embed())
     bot.loop.create_task(cleanup_removed_admins())
     bot.loop.create_task(update_status())
-    bot.loop.create_task(schedule_sftp_updates())  
+    bot.loop.create_task(schedule_sftp_updates())
+    bot.loop.create_task(update_missing_usernames())
     print("[DEBUG] Scheduled SFTP update task started.")
     
 @bot.tree.command(name="forceremove", description="Manually remove an admin from the database.")
@@ -278,7 +320,7 @@ async def force_remove(interaction: discord.Interaction, user: discord.Member):
     # Check if the user has the required role
     user_roles = [role.id for role in interaction.user.roles]
     if REQUIRED_ROLE_ID not in user_roles:
-        await interaction.response.send_message("❌ You do not have permission to use this command.", ephemeral=True)
+        await interaction.response.send_message("âŒ You do not have permission to use this command.", ephemeral=True)
         return
 
     discord_id = str(user.id)
@@ -293,10 +335,10 @@ async def force_remove(interaction: discord.Interaction, user: discord.Member):
     if result:
         cursor.execute("DELETE FROM admins WHERE discord_id = %s", (discord_id,))
         conn.commit()
-        msg = f"✅ **Removed** {user.mention} from the database."
+        msg = f"âœ… **Removed** {user.mention} from the database."
         print(f"[DEBUG] Removed {discord_id} ({user.name}) from the database.")
     else:
-        msg = f"❌ {user.mention} is **not** in the database."
+        msg = f"âŒ {user.mention} is **not** in the database."
         print(f"[DEBUG] Attempted to remove {discord_id} ({user.name}), but they were not found.")
 
     cursor.close()
@@ -311,7 +353,7 @@ async def forced_entry(interaction: discord.Interaction, user: discord.Member, r
     # Check if the user has the required role
     user_roles = [role.id for role in interaction.user.roles]
     if REQUIRED_ROLE_ID not in user_roles:
-        await interaction.response.send_message("❌ You do not have permission to use this command.", ephemeral=True)
+        await interaction.response.send_message("âŒ You do not have permission to use this command.", ephemeral=True)
         return
 
     discord_id = str(user.id)
@@ -328,12 +370,12 @@ async def forced_entry(interaction: discord.Interaction, user: discord.Member, r
     if result:
         cursor.execute("UPDATE admins SET reforger_id = %s, username = %s WHERE discord_id = %s", 
                        (reforger_id, username, discord_id))
-        msg = f"✅ **Updated** {user.mention}'s Reforger ID to `{reforger_id}`."
+        msg = f"âœ… **Updated** {user.mention}'s Reforger ID to `{reforger_id}`."
         print(f"[DEBUG] Updated {discord_id} ({username}) with Reforger ID: {reforger_id}")
     else:
         cursor.execute("INSERT INTO admins (discord_id, username, reforger_id, role_id) VALUES (%s, %s, %s, %s)",
                        (discord_id, username, reforger_id, role_id))
-        msg = f"✅ **Added** {user.mention} with Reforger ID `{reforger_id}`."
+        msg = f"âœ… **Added** {user.mention} with Reforger ID `{reforger_id}`."
         print(f"[DEBUG] Added {discord_id} ({username}) to the database with Reforger ID: {reforger_id}")
 
     conn.commit()
@@ -349,7 +391,7 @@ async def print_db(interaction: discord.Interaction):
     
     user_roles = [role.id for role in interaction.user.roles]
     if REQUIRED_ROLE_ID not in user_roles:
-        await interaction.response.send_message("❌ You do not have permission to use this command.", ephemeral=True)
+        await interaction.response.send_message("âŒ You do not have permission to use this command.", ephemeral=True)
         return
 
     conn = connect_db()
@@ -360,7 +402,7 @@ async def print_db(interaction: discord.Interaction):
     conn.close()
 
     if not admins:
-        await interaction.response.send_message("📭 No admins found in the database.", ephemeral=True)
+        await interaction.response.send_message("ðŸ“­ No admins found in the database.", ephemeral=True)
         return
 
     embed = discord.Embed(title="Registered Admins", color=discord.Color.green())
@@ -372,7 +414,7 @@ async def print_db(interaction: discord.Interaction):
     for discord_id, username, reforger_id in admins:
         user = bot.get_user(int(discord_id))
         display_name = user.name if user else username
-        admin_text += f"**{display_name}** - 🆔 {discord_id} | 🎮 {reforger_id}\n"
+        admin_text += f"**{display_name}** - ðŸ†” {discord_id} | ðŸŽ® {reforger_id}\n"
         admin_count += 1
 
         # If we reach max fields per embed, send the current embed and start a new one
@@ -440,7 +482,7 @@ async def update_sftp_files(json_data):
             sftp = ssh.open_sftp()
             remote_file_path = server["filepath"]
 
-            
+            # âœ… Step 1: Read the existing file from SFTP
             try:
                 with sftp.file(remote_file_path, "r") as f:
                     existing_data = f.read().decode("utf-8")
@@ -449,10 +491,10 @@ async def update_sftp_files(json_data):
                 print(f"[ERROR] Failed to read existing config on {server['host']}: {e}")
                 config_data = {}  # Create a new empty config if read fails
 
-            
+            # âœ… Step 2: Update only the "admins" section without overwriting the rest
             config_data["admins"] = admin_dict["admins"]
 
-            P
+            # âœ… Step 3: Write the updated file back to SFTP
             with sftp.file(remote_file_path, "w") as f:
                 f.write(json.dumps(config_data, indent=4))
 
