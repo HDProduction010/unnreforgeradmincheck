@@ -117,13 +117,3 @@ SFTP_HOST_2=...
 ## **License**
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
----
-
-## **Future Improvements**
-✅ Improve error handling for SFTP failures.  
-✅ Add **role-based permissions** for slash commands.  
-✅ Implement **auto-fix for missing Discord usernames**.  
-✅ Prevent **invalid Reforger IDs** from being added.  
-⬜️ Support **multiple Discord servers** (future).  
-
----
